@@ -1,6 +1,5 @@
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -13,7 +12,7 @@ SECRET_KEY = 'fsch+6!=q+@ol&%0x!nwdl@48^ixbd4clx5f1i!5n^66y+pmn*'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['willjohnston.pythonanywhere.com']
+ALLOWED_HOSTS = ['willjohnston.pythonanywhere.com', '127.0.0.1']
 
 
 # Application definition
@@ -33,14 +32,47 @@ INSTALLED_APPS = (
 # ChatterBot settings
 
 CHATTERBOT = {
-    'name': 'Django ChatterBot Example',
+    'name': 'Clarence',
     'trainer': 'chatterbot.trainers.ChatterBotCorpusTrainer',
     'training_data': [
-        'chatterbot.corpus.english.greetings'
+        'chatterbot.corpus.english.botprofile', 'chatterbot.corpus.english.conversations',
+        'chatterbot.corpus.english.emotion', 'chatterbot.corpus.english.food', 'chatterbot.corpus.english.gossip',
+        'chatterbot.corpus.english.humor', 'chatterbot.corpus.english.politics', 'chatterbot.corpus.english.psychology',
+        'my_corpus'
     ],
-    'django_app_name': 'django_chatterbot'
-}
+    #'training_data': [
+    #    {"What can you tell me?", """My main function is to help schedule events. However, I can also give you information on any events for the group.
+    #   This could range from event names and descriptions to timing (whether an event time is set or flexible to your preferences)."""
+    #    },
+    #    {"Could you explain event time to me?", """Event timing works in two ways.
+    #   Either an exact time is set or the best time is found from the group members preferences.
+    #   When creating an event, you will have the option to choose.
+    #   \nIf you set the timing to look for the best time, I will ask all group members who wish to attend their top two preferences.
+    #   An expiration date will determine when to process all the preferences and calculate the best time."""
+    #    }
+    #],
 
+    'logic_adapters': ['schedule_adapter.my_schedule_adapter'],
+
+    #[
+     #   {   
+      #      'import_path': 'schedule_adapter.my_schedule_adapter' 
+       # },
+
+    #    {
+    #        'import_path':'chatterbot.logic.BestMatch',
+    #        'statement_comparison_function': 'chatterbot.comparisons.levenshtein_distance'
+     #   },
+     #   {
+     #       'import_path': 'chatterbot.logic.LowConfidenceAdapter',
+     #       'threshold': 0.65,
+     #       'default_response': 'I am sorry, but I do not understand.'
+     #   }
+    #],
+
+    'django_app_name': 'django_chatterbot'
+
+}
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
