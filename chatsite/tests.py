@@ -51,7 +51,7 @@ class ApiTestCase(TestCase):
         Test that a specific is returned.
         """
         data = {
-            'text': 'Movies in the park'
+            'text': '<3> <1> Movies in the park'
         }
         response = self.client.post(
             self.api_url,
@@ -68,7 +68,7 @@ class ApiTestCase(TestCase):
         Test that a specific is returned.
         """
         data = {
-            'text': 'Moveis in the park'
+            'text': '<3> <1> Moveis in the park'
         }
         response = self.client.post(
             self.api_url,
@@ -102,7 +102,7 @@ class ApiTestCase(TestCase):
         Test that a specific response is returned.
         """
         data = {
-            'text': 'Schedule me for September 31st at 10 am'
+            'text': '<3> <1> Schedule me for September 31st at 10 am'
         }
         response = self.client.post(
             self.api_url,
@@ -120,7 +120,7 @@ class ApiTestCase(TestCase):
         Make sure the chatbot doesn't process schedule request.
         """
         data = {
-            'text': 'Schedule me for'
+            'text': '<3> <1> Schedule me for'
         }
         response = self.client.post(
             self.api_url,
