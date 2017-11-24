@@ -116,7 +116,7 @@ class my_schedule_adapter(LogicAdapter):
         
 
         #get events for group
-        events = [Statement('Movies in the park'), Statement('Why am I in this major pow wow'), Statement('Hockey game!')]
+        events = [Statement('event name')]
 
         #compare events with statement with levenstein distance of 3
         for e in events:
@@ -129,15 +129,9 @@ class my_schedule_adapter(LogicAdapter):
                     r = s.post(url, data=data)
                     cookie = r.text
                 #api call to get events
-                one_conf = self.compare_statements(e, Statement('Movies in the park'))
-                two_conf = self.compare_statements(e, Statement('Why am I in this major pow wow'))
-                three_conf = self.compare_statements(e, Statement('Hockey game!'))
+                one_conf = self.compare_statements(e, Statement('event name'))
                 if (one_conf == 1):
-                    eventID = 1
-                elif (two_conf == 1):
-                    eventID = 2
-                elif (three_conf == 1):
-                    eventID = 3
+                    eventID = 104
            
                 #add to user, group, event junction
                 if (groupID > 0 and userID > 0):
@@ -200,9 +194,9 @@ class my_schedule_adapter(LogicAdapter):
             #see if input statement has dates
 
             matches = list(datefinder.find_dates(str(statement)))
+            flag = True
             if (len(matches) != 0):
                 #Create output statement
-
                 confidence = 1
                 response += "Ok. I have recorded your preferences for the time(s):\n"
                 for match in matches:
@@ -213,16 +207,19 @@ class my_schedule_adapter(LogicAdapter):
                     r = s.post(url, data=data)
                     eventID = r.json()["eventID"]
                     
-                    if (groupID > 0 and eventID > 0):
+                    if (int(eventID) > 0):
                         #API call to add time preference to ScheduleIt database
                         data = json.dumps({"groupID": str(groupID), "eventID": str(eventID), "time" : str(match)})
                         url = "https://scheduleit.duckdns.org/api/timeinput/add"
                         r = s.post(url, data=data)
                         response += (str(match) + '  ')
+                    else:
+                        flag = False
                 #response += (str(matches[-1]))
             else:
                response = "Sorry, but I don't understand. If you were trying to add your time preferences, please add a date and time to your request."
-            
+            if (flag == False):
+                response = "Sorry, but I don't understand. If you were trying to add your time preferences, please make sure you add the event."
 
             response_statement = Statement(response)
             response_statement.confidence = confidence
@@ -274,7 +271,7 @@ class my_schedule_adapter(LogicAdapter):
 
                 # Set confidence to zero because a random response is selected
                 response.confidence = 0
-                print response.confidence
+                #print response.confidence
                 ######
                 #low confidence adapter
             if (response.confidence < 0.65):
