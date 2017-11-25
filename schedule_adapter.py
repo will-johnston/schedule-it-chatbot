@@ -116,33 +116,43 @@ class my_schedule_adapter(LogicAdapter):
         
 
         #get events for group
-        events = [Statement('event name')]
+        if (groupID > 0 and userID > 0):
+            data = json.dumps({"name": "Clarence", "pass": "roboto"})
+            url = "https://scheduleit.duckdns.org/api/user/login"
+            r = s.post(url, data=data)
+            cookie = r.json()["cookie"]
+            print cookie
 
-        #compare events with statement with levenstein distance of 3
-        for e in events:
-            event_conf = self.compare_statements(e, statement)
-            if (event_conf >= .92):
-                #get event id
-                if (cookie == None):
-                    data = json.dumps({"name": "Clarence", "pass": "roboto"})
-                    url = "https://scheduleit.duckdns.org/api/user/login"
-                    r = s.post(url, data=data)
-                    cookie = r.text
-                #api call to get events
-                one_conf = self.compare_statements(e, Statement('event name'))
-                if (one_conf == 1):
-                    eventID = 104
-           
-                #add to user, group, event junction
-                if (groupID > 0 and userID > 0):
 
-                    data = json.dumps({"groupID" : str(groupID), "eventID" : str(eventID), "userID" : str(userID)})
-                    url = "https://scheduleit.duckdns.org/api/ugejunction/add"
-                    r = s.post(url, data=data)
-                #return statement
-                event_statement = Statement("You can now add your preferences for the event: '" + str(e) + "'.")
-                event_statement.confidence = event_conf
-                return event_statement
+            data = json.dumps({
+                "cookie" : cookie,
+                "month" : "12",
+                "year" : "2011",
+                "groupid" : str(groupID)
+            })
+            url = "https://scheduleit.duckdns.org/api/user/groups/calendar/get"
+            r = s.post(url, data=data)
+            count = len(r.json())
+            events = {}
+            for x in range (0, count):
+                events[Statement(r.json()["event" + str(x)]["name"])] = r.json()["event" + str(x)]["id"]
+                #events.update({[Statement(r.json()["event" + str(x)]["name"])]: r.json()["event" + str(x)]["id"]})
+
+            #compare events with statement with confidence threshold of .92 (spelling errors)
+            for e in events:
+                event_conf = self.compare_statements(e, statement)
+                if (event_conf >= .92):
+                    #get event id
+                    eventID = events[e]
+                    #add to user, group, event junction
+                    if (groupID > 0 and userID > 0):
+                        data = json.dumps({"groupID" : str(groupID), "eventID" : str(eventID), "userID" : str(userID)})
+                        url = "https://scheduleit.duckdns.org/api/ugejunction/add"
+                        r = s.post(url, data=data)
+                    #return statement
+                    event_statement = Statement("You can now add your preferences for the event: '" + str(e) + "'.")
+                    event_statement.confidence = event_conf
+                    return event_statement
 
         ######
 
