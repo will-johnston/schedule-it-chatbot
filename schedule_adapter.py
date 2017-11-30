@@ -95,10 +95,13 @@ class my_schedule_adapter(LogicAdapter):
         import json
         import sys
         import copy
+        from datetime import date
 
         #Prepare for API call
         s = requests.Session()
         cookie = None
+        url = "https://scheduleit.duckdns.org/api/user/login"
+
         #####
         #get group id and user id
 
@@ -108,35 +111,109 @@ class my_schedule_adapter(LogicAdapter):
         userID = self.extractID(statement)
         if (userID > 0):
             statement = Statement(self.removeFirstFromStatement(statement))
-        eventID = -1;
+        eventID = -1
         #####
+        test = list(datefinder.find_dates(str(statement)))
+        print test
 
-        ######
-        #see if statement is an event string
-        
+        #####
+        #See if statement is a event creation request.
+        #create event, <event name>, <set/open-ended>, <date/expiration_time>, <description>
+        data = statement.text.split(",")
+        if (data[0] == "create event"):
+            print "CREATE EVENT"
+            name = data[1].lstrip()
+            mode = data[2].lstrip()
+            date = data[3].lstrip()
+            #MAKE SURE IS A VALID DATE
+            real_dates = list(datefinder.find_dates(str(statement)))
+            print str(statement)
+            print name
+            print mode
+            print date
+            print real_dates
 
-        #get events for group
-        if (groupID > 0 and userID > 0):
+            if (len(real_dates) != 0):
+                print "found date."
+            else:
+                return Statement("Error: No date found for event create.")
+            datetime = real_dates[0]
+            print str(datetime)
+            datetime = datetime.strftime("%a, %d %b %Y %H:%M:%S EST")
+            
+            description = ""
+            if (len(data) > 4):
+                description = data[4]
             data = json.dumps({"name": "Clarence", "pass": "roboto"})
-            url = "https://scheduleit.duckdns.org/api/user/login"
             r = s.post(url, data=data)
             cookie = r.json()["cookie"]
             print cookie
+            print "logged in"
+            print "datetime: " + str(datetime)
+            #create event
+            if (mode == "set"):
+                data = json.dumps({"cookie" : cookie, "name" : name, "description" : description, "type" : "Generic", "date" : str(datetime), "groupid" : groupID, "expiration_time" : "None"})
+                print data
+            else:
+                data = json.dumps({"cookie" : cookie, "name" : name, "description" : description, "type" : "Generic", "date" : "None", "groupid" : groupID, "expiration_time" : str(datetime)})
+                print data
+            url = "http://scheduleit.duckdns.org/api/user/groups/calendar/add"
+            r = s.post(url, data=data)
+            event_statement = Statement("Event created: " + name);
+            return event_statement;
+
+        e1 = set(['show', 'events'])
+        e2 = set(['get', 'events'])
+        e = [e1, e2]
+        split = statement.text.split(" ")
+        for showevents in e:
+            if (showevents.issubset(split)):
+                #ask for open-ended events
+                url = "https://scheduleit.duckdns.org/api/user/login"
+                data = json.dumps({"name": "Clarence", "pass": "roboto"})
+                r = s.post(url, data=data)
+                cookie = r.json()["cookie"]
+                data = json.dumps({
+                    "cookie" : cookie,
+                    "groupid" : groupID
+                })
+
+                url = "https://scheduleit.duckdns.org/api/user/groups/calendar/all"
+                r = s.post(url, data=data)
+                count = len(r.json())
+                print count
+                events = "Here are all the open-ended events for this group: "
+                index = 0
+                for x in range (0, count):
+                    if (r.json()[x]["is_open_ended"] == True):
+                        events += r.json()[x]["name"]
+                        if (index < count - 1):
+                            events += ", "
+                return Statement(events)
+        #####
 
 
+
+        ######
+        #see if statement is an event string
+        #get events for group
+        if (groupID > 0 and userID > 0):
+            url = "https://scheduleit.duckdns.org/api/user/login"
+            data = json.dumps({"name": "Clarence", "pass": "roboto"})
+            r = s.post(url, data=data)
+            cookie = r.json()["cookie"]
             data = json.dumps({
                 "cookie" : cookie,
-                "month" : "12",
-                "year" : "2011",
+
                 "groupid" : str(groupID)
             })
-            url = "https://scheduleit.duckdns.org/api/user/groups/calendar/get"
+            url = "https://scheduleit.duckdns.org/api/user/groups/calendar/all"
             r = s.post(url, data=data)
             count = len(r.json())
             events = {}
             for x in range (0, count):
-                events[Statement(r.json()["event" + str(x)]["name"])] = r.json()["event" + str(x)]["id"]
-                #events.update({[Statement(r.json()["event" + str(x)]["name"])]: r.json()["event" + str(x)]["id"]})
+                if (r.json()[x]["is_open_ended"] == True):
+                    events[Statement(r.json()[x]["name"])] = r.json()[x]["id"]
 
             #compare events with statement with confidence threshold of .92 (spelling errors)
             for e in events:
@@ -229,7 +306,7 @@ class my_schedule_adapter(LogicAdapter):
             else:
                response = "Sorry, but I don't understand. If you were trying to add your time preferences, please add a date and time to your request."
             if (flag == False):
-                response = "Sorry, but I don't understand. If you were trying to add your time preferences, please make sure you add the event."
+                response = "Sorry, but I don't understand. If you were trying to add your time preferences, please make sure you add the event prior to the request. Type 'help' for a list of commands."
 
             response_statement = Statement(response)
             response_statement.confidence = confidence
