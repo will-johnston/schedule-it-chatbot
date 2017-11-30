@@ -113,32 +113,21 @@ class my_schedule_adapter(LogicAdapter):
             statement = Statement(self.removeFirstFromStatement(statement))
         eventID = -1
         #####
-        test = list(datefinder.find_dates(str(statement)))
-        print test
 
         #####
         #See if statement is a event creation request.
         #create event, <event name>, <set/open-ended>, <date/expiration_time>, <description>
         data = statement.text.split(",")
         if (data[0] == "create event"):
-            print "CREATE EVENT"
             name = data[1].lstrip()
             mode = data[2].lstrip()
             date = data[3].lstrip()
             #MAKE SURE IS A VALID DATE
             real_dates = list(datefinder.find_dates(str(statement)))
-            print str(statement)
-            print name
-            print mode
-            print date
-            print real_dates
 
-            if (len(real_dates) != 0):
-                print "found date."
-            else:
+            if (len(real_dates) == 0):
                 return Statement("Error: No date found for event create.")
             datetime = real_dates[0]
-            print str(datetime)
             datetime = datetime.strftime("%a, %d %b %Y %H:%M:%S EST")
             
             description = ""
@@ -147,16 +136,11 @@ class my_schedule_adapter(LogicAdapter):
             data = json.dumps({"name": "Clarence", "pass": "roboto"})
             r = s.post(url, data=data)
             cookie = r.json()["cookie"]
-            print cookie
-            print "logged in"
-            print "datetime: " + str(datetime)
             #create event
             if (mode == "set"):
                 data = json.dumps({"cookie" : cookie, "name" : name, "description" : description, "type" : "Generic", "date" : str(datetime), "groupid" : groupID, "expiration_time" : "None"})
-                print data
             else:
                 data = json.dumps({"cookie" : cookie, "name" : name, "description" : description, "type" : "Generic", "date" : "None", "groupid" : groupID, "expiration_time" : str(datetime)})
-                print data
             url = "http://scheduleit.duckdns.org/api/user/groups/calendar/add"
             r = s.post(url, data=data)
             event_statement = Statement("Event created: " + name);
@@ -181,7 +165,6 @@ class my_schedule_adapter(LogicAdapter):
                 url = "https://scheduleit.duckdns.org/api/user/groups/calendar/all"
                 r = s.post(url, data=data)
                 count = len(r.json())
-                print count
                 events = "Here are all the open-ended events for this group: "
                 index = 0
                 for x in range (0, count):
