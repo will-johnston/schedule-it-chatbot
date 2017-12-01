@@ -100,7 +100,6 @@ class my_schedule_adapter(LogicAdapter):
         #Prepare for API call
         s = requests.Session()
         cookie = None
-        url = "https://scheduleit.duckdns.org/api/user/login"
 
         #####
         #get group id and user id
@@ -117,6 +116,7 @@ class my_schedule_adapter(LogicAdapter):
         #####
         #See if statement is a event creation request.
         #create event, <event name>, <set/open-ended>, <date/expiration_time>, <description>
+        #create event, further testing, open-ended, December 2nd at 10 am, pls work
         data = statement.text.split(",")
         if (data[0] == "create event"):
             name = data[1].lstrip()
@@ -133,6 +133,7 @@ class my_schedule_adapter(LogicAdapter):
             description = ""
             if (len(data) > 4):
                 description = data[4]
+            url = "https://scheduleit.duckdns.org/api/user/login"
             data = json.dumps({"name": "Clarence", "pass": "roboto"})
             r = s.post(url, data=data)
             cookie = r.json()["cookie"]
@@ -174,11 +175,7 @@ class my_schedule_adapter(LogicAdapter):
                             events += ", "
                 return Statement(events)
         #####
-
-
-
-        ######
-        #see if statement is an event string
+#see if statement is an event string
         #get events for group
         if (groupID > 0 and userID > 0):
             url = "https://scheduleit.duckdns.org/api/user/login"
@@ -213,6 +210,9 @@ class my_schedule_adapter(LogicAdapter):
                     event_statement = Statement("You can now add your preferences for the event: '" + str(e) + "'.")
                     event_statement.confidence = event_conf
                     return event_statement
+
+        ######
+        
 
         ######
 
